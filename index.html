@@ -1,5 +1,4 @@
 
-
 <!doctype html>
 <html lang="tr">
 <head>
@@ -34,7 +33,6 @@ button{background:#176b55;color:white;border:0;margin-top:12px;font-weight:bold}
 </head>
 <body>
 <main>
-
 <header>
 <h1>Vardiya Cepte</h1>
 <div>Vardiyanı kolayca takip et</div>
@@ -42,7 +40,6 @@ button{background:#176b55;color:white;border:0;margin-top:12px;font-weight:bold}
 
 <section class="card">
 <h3>Vardiya ayarları</h3>
-
 <label>Başlangıç tarihi</label>
 <input id="start" type="date">
 
@@ -74,7 +71,6 @@ button{background:#176b55;color:white;border:0;margin-top:12px;font-weight:bold}
 
 <section class="card">
 <h3>💰 Maaş ve mesai hesaplama</h3>
-
 <label>Aylık maaşın (TL)</label>
 <input id="salary" type="number" min="0" placeholder="Örnek: 50000">
 
@@ -89,36 +85,18 @@ button{background:#176b55;color:white;border:0;margin-top:12px;font-weight:bold}
 
 <button onclick="calculate()">Hesapla</button>
 
-<div class="result">
-Aylık çalışma saati
-<strong id="totalHours">0 saat</strong>
-</div>
+<div class="result">Aylık çalışma saati<strong id="totalHours">0 saat</strong></div>
+<div class="result">Fazla mesai saati<strong id="overtime">0 saat</strong></div>
+<div class="result">Tahmini fazla mesai ücreti<strong id="overtimePay">0 TL</strong></div>
+<div class="result">Maaş + tahmini mesai<strong id="totalPay">0 TL</strong></div>
 
-<div class="result">
-Fazla mesai saati
-<strong id="overtime">0 saat</strong>
-</div>
-
-<div class="result">
-Tahmini fazla mesai ücreti
-<strong id="overtimePay">0 TL</strong>
-</div>
-
-<div class="result">
-Maaş + tahmini mesai
-<strong id="totalPay">0 TL</strong>
-</div>
-
-<p class="small">
-Hesaplama, seçilen vardiya süresi ve takvimdeki çalışma günleri üzerinden tahmini olarak yapılır. Fazla mesai, aylık normal saat sınırını aşan süreye göre hesaplanır. Gerçek ücret; bordro, sözleşme ve mevzuata göre farklılık gösterebilir.
-</p>
+<p class="small">Bu hesaplama tahminidir. Gerçek fazla mesai ücreti bordro, sözleşme ve mevzuata göre farklılık gösterebilir.</p>
 </section>
 
 <section class="card">
 <b>Kullanım bilgisi</b>
 <p>Bir güne dokunarak Gündüz, Gece, Boş veya İzin olarak değiştirebilirsin. Değişiklikler telefonuna kaydedilir.</p>
 </section>
-
 </main>
 
 <script>
@@ -162,48 +140,48 @@ shown.setMonth(shown.getMonth()+n);
 draw();
 }
 
+function getShift(d){
+const start=new Date($('start').value+'T12:00:00');
+const delta=Math.round((d-start)/86400000);
+const seq=$('cycle').value==='2-2'
+?['Gündüz','Gündüz','Gece','Gece','Boş','Boş']
+:['Gündüz','Gece','Boş'];
+const key=localDate(d);
+return edits[key]||seq[((delta%seq.length)+seq.length)%seq.length];
+}
+
 function draw(){
 const first=new Date(shown.getFullYear(),shown.getMonth(),1);
-const total=new Date(shown.getFullYear(),shown.getMonth()+1,0).getDate();
+const daysInMonth=new Date(shown.getFullYear(),shown.getMonth()+1,0).getDate();
 
-$('month').textContent=shown.toLocaleDateString('tr-TR',{
-month:'long',year:'numeric'
-});
+$('month').textContent=shown.toLocaleDateString('tr-TR',{month:'long',year:'numeric'});
 
 $('days').innerHTML=['Pzt','Sal','Çar','Per','Cum','Cmt','Paz'].map(n=>
 '<div class="day"><b>'+n+'</b></div>'
 ).join('');
 
-const start=new Date($('start').value+'T12:00:00');
-
-const seq=$('cycle').value==='2-2'
-?['Gündüz','Gündüz','Gece','Gece','Boş','Boş']
-:['Gündüz','Gece','Boş'];
-
 for(let i=0;i<(first.getDay()+6)%7;i++){
 $('days').innerHTML+='<div></div>';
 }
 
-for(let n=1;n<=total;n++){
+for(let n=1;n<=daysInMonth;n++){
 const d=new Date(shown.getFullYear(),shown.getMonth(),n,12);
-const delta=Math.round((d-start)/86400000);
 const key=localDate(d);
-const v=edits[key]||seq[((delta%seq.length)+seq.length)%seq.length];
-
+const v=getShift(d);
 const el=document.createElement('div');
 el.className='day '+v;
 el.innerHTML='<b>'+n+'</b>'+v;
 
 el.onclick=()=>{
-const a=['Gündüz','Gece','Boş','İzin'];
-edits[key]=a[(a.indexOf(v)+1)%a.length];
+const choices=['Gündüz','Gece','Boş','İzin'];
+const current=getShift(d);
+edits[key]=choices[(choices.indexOf(current)+1)%choices.length];
 save();
 draw();
 };
 
 $('days').appendChild(el);
 }
-
 calculate();
 }
 
@@ -215,24 +193,13 @@ maximumFractionDigits:2
 }
 
 function calculate(){
-const total=new Date(shown.getFullYear(),shown.getMonth()+1,0).getDate();
-const start=new Date($('start').value+'T12:00:00');
-
-const seq=$('cycle').value==='2-2'
-?['Gündüz','Gündüz','Gece','Gece','Boş','Boş']
-:['Gündüz','Gece','Boş'];
-
+const daysInMonth=new Date(shown.getFullYear(),shown.getMonth()+1,0).getDate();
 let workingDays=0;
 
-for(let n=1;n<=total;n++){
+for(let n=1;n<=daysInMonth;n++){
 const d=new Date(shown.getFullYear(),shown.getMonth(),n,12);
-const delta=Math.round((d-start)/86400000);
-const key=localDate(d);
-const v=edits[key]||seq[((delta%seq.length)+seq.length)%seq.length];
-
-if(v==='Gündüz'||v==='Gece'){
-workingDays++;
-}
+const v=getShift(d);
+if(v==='Gündüz'||v==='Gece')workingDays++;
 }
 
 const dailyHours=Number($('hours').value)||8;
@@ -240,12 +207,12 @@ const normal=Number($('normal').value)||0;
 const salary=Number($('salary').value)||0;
 const multiplier=Number($('multiplier').value)||1.5;
 
-const total=workingDays*dailyHours;
-const overtime=Math.max(0,total-normal);
+const totalHours=workingDays*dailyHours;
+const overtime=Math.max(0,totalHours-normal);
 const hourly=normal>0?salary/normal:0;
 const overtimePay=overtime*hourly*multiplier;
 
-$('totalHours').textContent=total+' saat';
+$('totalHours').textContent=totalHours+' saat';
 $('overtime').textContent=overtime+' saat';
 $('overtimePay').textContent=money(overtimePay);
 $('totalPay').textContent=money(salary+overtimePay);
@@ -262,3 +229,4 @@ draw();
 </script>
 </body>
 </html>
+
