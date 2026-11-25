@@ -5,49 +5,56 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#176b55">
-<meta name="description" content="Vardiya, takvim ve fazla mesai takip uygulaması.">
+<meta name="description" content="Kişisel vardiya ve fazla mesai takip uygulaması.">
 <title>Vardiya Cepte</title>
 <style>
 *{box-sizing:border-box}
-body{margin:0;padding:15px;background:#f1f5f3;color:#20352d;font-family:Arial,sans-serif}
-main{max-width:700px;margin:auto}
-header,.card{background:white;border-radius:15px;padding:17px;margin-bottom:14px}
+body{margin:0;padding:12px;background:#f1f5f3;color:#20352d;font-family:Arial,sans-serif}
+main{max-width:760px;margin:auto}
+header,.card{background:white;border-radius:15px;padding:16px;margin-bottom:13px}
 header{background:#176b55;color:white}
 h1{margin:0 0 6px;font-size:26px}
-h3{margin:0 0 14px}
-label{display:block;font-size:14px;font-weight:bold;margin:13px 0 6px}
-input,select,button{width:100%;padding:12px;border:1px solid #ccd8d1;border-radius:9px;font:inherit;background:white}
-button{background:#176b55;color:white;border:0;font-weight:bold;margin-top:10px;cursor:pointer}
+h3{margin:0 0 13px}
+label{display:block;font-size:14px;font-weight:bold;margin:12px 0 6px}
+input,select,button{width:100%;padding:11px;border:1px solid #ccd8d1;border-radius:9px;font:inherit;background:white}
+button{background:#176b55;color:white;border:0;font-weight:bold;margin-top:9px;cursor:pointer}
 button.secondary{background:#e7efeb;color:#244b3c}
 .small{font-size:12px;color:#65756d;line-height:1.5}
-#status{font-size:12px;color:#176b55;margin-top:10px}
+#status{font-size:12px;color:#176b55;margin-top:9px}
 .nav{display:flex;gap:8px}
 .nav button{width:50%;margin:0}
-#month{text-align:center;text-transform:capitalize;margin:16px 0}
-#days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px}
-.day{min-height:76px;padding:7px 2px;border-radius:8px;background:#eef3f0;text-align:center;font-size:11px;cursor:pointer;overflow:hidden}
-.day b{display:block;font-size:14px;margin-bottom:5px}
-.day small{display:block;font-size:9px;margin-top:5px;color:#52645b;white-space:nowrap}
-.weekname{padding:8px 1px;text-align:center;font-size:11px;font-weight:bold}
+.month-tools{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+#month{text-align:center;text-transform:capitalize;margin:15px 0}
+#days{display:flex;flex-direction:column;gap:7px}
+.weekname,.week-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+.weekname div{text-align:center;padding:7px 1px;font-size:11px;font-weight:bold}
 .weekend-name{color:#d32636}
+.week-grid .day{min-width:0;min-height:76px;padding:6px 2px;border-radius:8px;background:#eef3f0;text-align:center;font-size:10px;cursor:pointer;overflow:hidden}
+.day b{display:block;font-size:14px;margin-bottom:5px}
+.day span{display:block;overflow-wrap:anywhere}
+.day small{display:block;font-size:9px;margin-top:5px;color:#52645b}
 .weekend{background:#ffe1e3!important;border:1px solid #e9a0a6}
 .weekend b,.weekend .shift-name{color:#c51e30}
-.Gündüz{background:#c9efd9}
-.Akşam{background:#ffe5c2}
-.Gece{background:#dcdcff}
-.Boş{background:#e9eceb}
-.İzin{background:#ffe0e4}
-.result{background:#eef5f1;border-radius:10px;padding:13px;margin-top:10px}
-.result strong{display:block;font-size:21px;margin-top:5px}
+.Gündüz{background:#c9efd9!important}
+.Akşam{background:#ffe5c2!important}
+.Gece{background:#dcdcff!important}
+.Boş{background:#e9eceb!important}
+.İzin{background:#ffe0e4!important}
+.outside{opacity:.35}
+.week-tools{display:flex;gap:5px;align-items:center;margin-top:5px}
+.week-tools select{flex:1;min-width:0;padding:7px;font-size:11px}
+.week-tools button{width:auto;margin:0;padding:8px;font-size:11px;white-space:nowrap}
 .time-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
-.time-grid input{padding:9px;font-size:13px}
-#customBox{display:none}
+.time-grid input{padding:8px;font-size:12px}
+.result{background:#eef5f1;border-radius:10px;padding:12px;margin-top:9px}
+.result strong{display:block;font-size:20px;margin-top:5px}
 footer{text-align:center;color:#718078;font-size:11px;padding:10px}
-@media(max-width:380px){
-body{padding:9px}
-.day{min-height:70px;font-size:10px}
+@media(max-width:390px){
+body{padding:8px}
+.week-grid .day{min-height:69px;font-size:9px}
 .day small{font-size:8px}
-.time-grid{gap:5px}
+.week-tools button{font-size:10px;padding:7px}
+.weekname div{font-size:10px}
 }
 </style>
 </head>
@@ -61,6 +68,13 @@ body{padding:9px}
 <section class="card">
 <h3>⚙️ Vardiya ayarları</h3>
 
+<label>Vardiya kullanım şekli</label>
+<select id="mode">
+<option value="auto">Otomatik vardiya düzeni</option>
+<option value="manual">Vardiyalarımı kendim belirle</option>
+</select>
+
+<div id="autoSettings">
 <label>Vardiya başlangıç tarihi</label>
 <input type="date" id="start">
 
@@ -69,19 +83,24 @@ body{padding:9px}
 <option value="2-2-2">2 gündüz / 2 gece / 2 boş</option>
 <option value="1-1-1">1 gündüz / 1 gece / 1 boş</option>
 <option value="3-3-3">3 gündüz / 3 gece / 3 boş</option>
-<option value="three">Üçlü vardiya: Gündüz / Akşam / Gece / Boş</option>
+<option value="three">Gündüz / Akşam / Gece / Boş</option>
 <option value="custom">Kendi vardiya düzenimi oluştur</option>
 </select>
 
 <div id="customBox">
 <label>Kendi vardiya döngün</label>
-<input id="customCycle" placeholder="Örnek: Gündüz, Gündüz, Akşam, Gece, Boş">
+<input id="customCycle" placeholder="Gündüz, Akşam, Gece, Boş">
 <p class="small">Vardiyaları virgülle ayır. Gündüz, Akşam, Gece, Boş ve İzin yazabilirsin.</p>
+</div>
+<button id="createBtn">Otomatik takvimi uygula</button>
+</div>
+
+<div id="manualInfo" style="display:none">
+<p class="small">Manuel modda istediğin ayı açabilir, günlere tek tek veya haftanın tamamına vardiya atayabilirsin.</p>
 </div>
 
 <h3 style="margin-top:20px">🕒 Vardiya saatleri</h3>
-<p class="small">Her vardiyanın başlangıç ve bitiş saatini kendin belirle.</p>
-
+<p class="small">Vardiyalarının saatlerini kendin belirle.</p>
 <div class="time-grid">
 <div>
 <label>Gündüz</label>
@@ -99,24 +118,34 @@ body{padding:9px}
 <input type="time" id="nightEnd" value="08:00">
 </div>
 </div>
-
-<button id="createBtn">Takvimi oluştur</button>
 <div id="status">Bilgilerin otomatik kaydedilir.</div>
 </section>
 
 <section class="card">
 <div class="nav">
-<button class="secondary" onclick="changeMonth(-1)">◀ Önceki ay</button>
-<button class="secondary" onclick="changeMonth(1)">Sonraki ay ▶</button>
+<button class="secondary" id="prevMonth">◀ Önceki ay</button>
+<button class="secondary" id="nextMonth">Sonraki ay ▶</button>
 </div>
+
+<div class="month-tools">
+<div>
+<label>İstediğin ayı aç</label>
+<input type="month" id="monthPicker">
+</div>
+<div>
+<label>İstediğin tarihi aç</label>
+<input type="date" id="datePicker">
+</div>
+</div>
+
 <h3 id="month"></h3>
 <div id="days"></div>
-<p class="small">Günlere dokunarak Gündüz, Akşam, Gece, Boş veya İzin arasında geçiş yapabilirsin. Cumartesi ve pazar kırmızı renktedir.</p>
+<p class="small">Bir güne dokunarak vardiyasını değiştirebilirsin. Her haftanın altındaki menüyle o haftanın tamamını da düzenleyebilirsin.</p>
 </section>
 
 <section class="card">
 <h3>💰 Basit fazla mesai hesaplama</h3>
-<p class="small">Bu ay kaç saat fazla mesai yaptığını yaz. Ücretini hesaplayalım.</p>
+<p class="small">Maaş ve fazla mesai bilgilerini gir.</p>
 
 <label>Aylık net maaşın (TL)</label>
 <input type="number" id="salary" min="0" step="0.01" placeholder="Örnek: 35000">
@@ -133,20 +162,18 @@ body{padding:9px}
 <option value="2">2 kat</option>
 </select>
 
-<button onclick="calculate()">Mesai ücretini hesapla</button>
-
+<button id="calculateBtn">Mesai ücretini hesapla</button>
 <div class="result">Saatlik normal ücret<strong id="hourly">0,00 TL</strong></div>
 <div class="result">Fazla mesai saatin<strong id="overtimeResult">0 saat</strong></div>
 <div class="result">Fazla mesai ücretin<strong id="overtimePay">0,00 TL</strong></div>
 <div class="result">Maaş + fazla mesai<strong id="totalPay">0,00 TL</strong></div>
-
-<p class="small">Hesaplama: Aylık maaş ÷ normal aylık saat × mesai saati × katsayı. Bu sonuç tahminidir; gerçek bordro hesabı sözleşme ve mevzuata göre değişebilir.</p>
+<p class="small">Hesaplama tahminidir. Gerçek bordro hesabı sözleşme ve mevzuata göre değişebilir.</p>
 </section>
 
 <section class="card">
 <h3>ℹ️ Kullanım bilgisi</h3>
-<p class="small">Cumartesi ve pazar günleri kırmızı gösterilir. Bu günler otomatik tatil değildir; vardiya düzenine göre çalışabilir veya boş olabilirsin.</p>
-<p class="small">Ayarların ve takvim değişikliklerin telefonunda otomatik saklanır.</p>
+<p class="small">Cumartesi ve pazar günleri kırmızı gösterilir. Bu günler otomatik tatil değildir; çalışabilir veya boş olabilirsin.</p>
+<p class="small">Günlük ve haftalık düzenlemelerin telefonunda saklanır. Manuel modda istediğin ayı ve haftayı kendin düzenleyebilirsin.</p>
 </section>
 
 <footer>Vardiya Cepte © 2026</footer>
@@ -156,21 +183,21 @@ body{padding:9px}
 const $=id=>document.getElementById(id);
 const KEY='vardiyaCepteYeni';
 const OLDKEY='vardiyaCepte';
+const choices=['Gündüz','Akşam','Gece','Boş','İzin'];
 
 function dateKey(d){
 return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 }
-
 function parseDate(s){
 return new Date(s+'T12:00:00');
 }
-
+function monthKey(d){
+return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+}
 let saved={};
 try{
 saved=JSON.parse(localStorage.getItem(KEY)||localStorage.getItem(OLDKEY)||'{}');
-}catch(e){
-saved={};
-}
+}catch(e){saved={};}
 
 let edits=saved.edits||saved.days||{};
 let shown=new Date();
@@ -180,6 +207,7 @@ function setValue(id,value){
 if(value!==undefined&&value!==null)$(id).value=value;
 }
 
+setValue('mode',saved.mode||'auto');
 setValue('start',saved.start||saved.settings?.start||dateKey(new Date()));
 setValue('cycle',saved.cycle||saved.settings?.cycle||'2-2-2');
 setValue('customCycle',saved.customCycle||'Gündüz, Akşam, Gece, Boş');
@@ -194,25 +222,25 @@ setValue('normal',saved.normal||'225');
 setValue('overtimeHours',saved.overtimeHours||'');
 setValue('multiplier',saved.multiplier||'1.5');
 
+shown=parseDate(saved.shownMonth||$('start').value);
+shown.setDate(1);
+
 function sequence(){
 const type=$('cycle').value;
-
 if(type==='2-2-2')return ['Gündüz','Gündüz','Gece','Gece','Boş','Boş'];
 if(type==='1-1-1')return ['Gündüz','Gece','Boş'];
 if(type==='3-3-3')return ['Gündüz','Gündüz','Gündüz','Gece','Gece','Gece','Boş','Boş','Boş'];
 if(type==='three')return ['Gündüz','Akşam','Gece','Boş'];
-
 if(type==='custom'){
 const values=$('customCycle').value.split(',').map(x=>x.trim()).filter(Boolean);
-const allowed=['Gündüz','Akşam','Gece','Boş','İzin'];
-return values.length&&values.every(x=>allowed.includes(x))?values:['Gündüz','Akşam','Gece','Boş'];
+return values.length&&values.every(x=>choices.includes(x))?values:['Gündüz','Akşam','Gece','Boş'];
 }
-
 return ['Gündüz','Gece','Boş'];
 }
 
 function save(){
 const data={
+mode:$('mode').value,
 start:$('start').value,
 cycle:$('cycle').value,
 customCycle:$('customCycle').value,
@@ -226,24 +254,26 @@ salary:$('salary').value,
 normal:$('normal').value,
 overtimeHours:$('overtimeHours').value,
 multiplier:$('multiplier').value,
-edits:edits
+edits:edits,
+shownMonth:monthKey(shown)
 };
-
+try{
 localStorage.setItem(KEY,JSON.stringify(data));
 $('status').textContent='✓ Bilgilerin kaydedildi.';
+}catch(e){
+$('status').textContent='Kayıt yapılamadı. Telefonunda depolama alanını kontrol et.';
+}
 }
 
 function getShift(d){
 const key=dateKey(d);
+if(Object.prototype.hasOwnProperty.call(edits,key))return edits[key];
 
-if(Object.prototype.hasOwnProperty.call(edits,key)){
-return edits[key];
-}
+if($('mode').value==='manual')return 'Boş';
 
 const start=parseDate($('start').value);
 const delta=Math.round((d-start)/86400000);
 const seq=sequence();
-
 return seq[((delta%seq.length)+seq.length)%seq.length];
 }
 
@@ -254,59 +284,113 @@ if(value==='Gece')return $('nightStart').value+'–'+$('nightEnd').value;
 return '';
 }
 
+function updateMode(){
+const manual=$('mode').value==='manual';
+$('autoSettings').style.display=manual?'none':'block';
+$('manualInfo').style.display=manual?'block':'none';
+}
+
 function changeMonth(n){
-shown.setMonth(shown.getMonth()+n);
+shown=new Date(shown.getFullYear(),shown.getMonth()+n,1,12);
 draw();
+save();
 }
 
 function draw(){
-const first=new Date(shown.getFullYear(),shown.getMonth(),1,12);
-const count=new Date(shown.getFullYear(),shown.getMonth()+1,0).getDate();
-
+const year=shown.getFullYear();
+const month=shown.getMonth();
+const first=new Date(year,month,1,12);
+const count=new Date(year,month+1,0).getDate();
 $('month').textContent=shown.toLocaleDateString('tr-TR',{month:'long',year:'numeric'});
+$('monthPicker').value=monthKey(shown);
 
 const names=['Pzt','Sal','Çar','Per','Cum','Cmt','Paz'];
+const container=$('days');
+container.replaceChildren();
 
-$('days').innerHTML=names.map((name,i)=>
-'<div class="weekname '+(i>=5?'weekend-name':'')+'">'+name+'</div>'
-).join('');
+const heading=document.createElement('div');
+heading.className='weekname';
+names.forEach((name,i)=>{
+const el=document.createElement('div');
+el.textContent=name;
+if(i>=5)el.classList.add('weekend-name');
+heading.appendChild(el);
+});
+container.appendChild(heading);
 
-for(let i=0;i<(first.getDay()+6)%7;i++){
-$('days').innerHTML+='<div></div>';
-}
+const offset=(first.getDay()+6)%7;
+const total=Math.ceil((offset+count)/7);
+const firstDate=new Date(year,month,1-offset,12);
 
-for(let n=1;n<=count;n++){
-const d=new Date(shown.getFullYear(),shown.getMonth(),n,12);
-const key=dateKey(d);
+for(let w=0;w<total;w++){
+const weekStart=new Date(firstDate);
+weekStart.setDate(firstDate.getDate()+w*7);
+
+const week=document.createElement('div');
+const grid=document.createElement('div');
+grid.className='week-grid';
+
+for(let i=0;i<7;i++){
+const d=new Date(weekStart);
+d.setDate(weekStart.getDate()+i);
 const value=getShift(d);
 const weekend=d.getDay()===0||d.getDay()===6;
-const time=getShiftTime(value);
-
 const el=document.createElement('div');
-el.className='day '+value+(weekend?' weekend':'');
+el.className='day '+value+(weekend?' weekend':'')+(d.getMonth()!==month?' outside':'');
+const number=document.createElement('b');
+number.textContent=d.getDate();
+const shift=document.createElement('span');
+shift.className='shift-name';
+shift.textContent=value;
+el.append(number,shift);
 
-el.innerHTML=
-'<b>'+n+'</b>'+
-'<span class="shift-name">'+value+'</span>'+
-(time?'<small>'+time+'</small>':'');
+const time=getShiftTime(value);
+if(time){
+const small=document.createElement('small');
+small.textContent=time;
+el.appendChild(small);
+}
 
-el.onclick=()=>{
-const choices=['Gündüz','Akşam','Gece','Boş','İzin'];
+el.addEventListener('click',()=>{
 const current=getShift(d);
-edits[key]=choices[(choices.indexOf(current)+1)%choices.length];
+const next=(choices.indexOf(current)+1)%choices.length;
+edits[dateKey(d)]=choices[next];
 save();
 draw();
-};
+});
+grid.appendChild(el);
+}
 
-$('days').appendChild(el);
+week.appendChild(grid);
+
+const tools=document.createElement('div');
+tools.className='week-tools';
+const select=document.createElement('select');
+choices.forEach(value=>{
+const option=document.createElement('option');
+option.value=value;
+option.textContent='Tüm hafta: '+value;
+select.appendChild(option);
+});
+const apply=document.createElement('button');
+apply.textContent='Haftaya uygula';
+apply.addEventListener('click',()=>{
+for(let i=0;i<7;i++){
+const d=new Date(weekStart);
+d.setDate(weekStart.getDate()+i);
+edits[dateKey(d)]=select.value;
+}
+save();
+draw();
+});
+tools.append(select,apply);
+week.appendChild(tools);
+container.appendChild(week);
 }
 }
 
 function money(n){
-return n.toLocaleString('tr-TR',{
-minimumFractionDigits:2,
-maximumFractionDigits:2
-})+' TL';
+return n.toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2})+' TL';
 }
 
 function calculate(){
@@ -314,17 +398,38 @@ const salary=Math.max(0,Number($('salary').value)||0);
 const normal=Math.max(0,Number($('normal').value)||0);
 const hours=Math.max(0,Number($('overtimeHours').value)||0);
 const multiplier=Number($('multiplier').value)||1.5;
-
 const hourly=normal>0?salary/normal:0;
 const pay=hourly*hours*multiplier;
-
 $('hourly').textContent=money(hourly);
 $('overtimeResult').textContent=hours+' saat';
 $('overtimePay').textContent=money(pay);
 $('totalPay').textContent=money(salary+pay);
-
 save();
 }
+
+$('prevMonth').addEventListener('click',()=>changeMonth(-1));
+$('nextMonth').addEventListener('click',()=>changeMonth(1));
+
+$('monthPicker').addEventListener('change',()=>{
+if(!$('monthPicker').value)return;
+shown=parseDate($('monthPicker').value+'-01');
+draw();
+save();
+});
+
+$('datePicker').addEventListener('change',()=>{
+if(!$('datePicker').value)return;
+shown=parseDate($('datePicker').value);
+shown.setDate(1);
+draw();
+save();
+});
+
+$('mode').addEventListener('change',()=>{
+updateMode();
+save();
+draw();
+});
 
 $('cycle').addEventListener('change',()=>{
 $('customBox').style.display=$('cycle').value==='custom'?'block':'none';
@@ -337,17 +442,13 @@ if(!$('start').value){
 alert('Lütfen başlangıç tarihi seç.');
 return;
 }
-
 if($('cycle').value==='custom'){
 const values=$('customCycle').value.split(',').map(x=>x.trim()).filter(Boolean);
-const allowed=['Gündüz','Akşam','Gece','Boş','İzin'];
-
-if(!values.length||!values.every(x=>allowed.includes(x))){
+if(!values.length||!values.every(x=>choices.includes(x))){
 alert('Yalnızca Gündüz, Akşam, Gece, Boş veya İzin yazabilirsin. Virgülle ayır.');
 return;
 }
 }
-
 save();
 draw();
 });
@@ -361,25 +462,14 @@ draw();
 ].forEach(id=>{
 $(id).addEventListener('change',()=>{
 save();
-
-if(id==='start')draw();
-
-if([
-'morningStart','morningEnd',
-'eveningStart','eveningEnd',
-'nightStart','nightEnd'
-].includes(id)){
 draw();
-}
-
-if(['salary','normal','overtimeHours','multiplier'].includes(id)){
-calculate();
-}
 });
 });
 
+$('calculateBtn').addEventListener('click',calculate);
+
+updateMode();
 $('customBox').style.display=$('cycle').value==='custom'?'block':'none';
-
 draw();
 calculate();
 </script>
