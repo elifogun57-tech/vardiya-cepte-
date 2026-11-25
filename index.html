@@ -1,270 +1,352 @@
-vardiya-cepte-
-Repository navigation
-Code
-Issues
-Pull requests
-vardiya-cepte-
-/index.html
 
-elifogun57-tech
-15 minutes ago
-255 lines (205 loc) · 7.09 KB
-
-Code
-
-Blame
-
-
-<!doctype html>
+<!DOCTYPE html>
 <html lang="tr">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#176b55">
-<meta name="description" content="Vardiya takvimi, maaş ve mesai hesaplama uygulaması.">
+<meta name="description" content="Vardiya, izin, tatil, maaş ve mesai takip uygulaması.">
 <link rel="manifest" href="./manifest.json">
 <title>Vardiya Cepte</title>
-
 <style>
+:root{--green:#176b55;--dark:#18332b;--bg:#f2f6f4;--line:#dce7e1}
 *{box-sizing:border-box}
-body{font-family:Arial,sans-serif;background:#f2f6f4;color:#18332b;margin:0;padding:18px}
-main{max-width:650px;margin:auto}
-header,.card{background:white;border-radius:14px;padding:18px;margin-bottom:14px}
-header{background:#176b55;color:white}
-h1{margin:0 0 6px}
-label{display:block;margin:12px 0 5px}
-input,select,button{font:inherit;padding:12px;border:1px solid #ccd9d2;border-radius:9px;width:100%}
-button{background:#176b55;color:white;border:0;margin-top:12px;font-weight:bold}
+body{font-family:Arial,sans-serif;background:var(--bg);color:var(--dark);margin:0;padding:12px}
+main{max-width:720px;margin:auto}
+header,.card{background:white;border-radius:15px;padding:17px;margin-bottom:14px}
+header{background:var(--green);color:white}
+h1{margin:0 0 6px;font-size:25px}
+h3{margin:0 0 12px}
+label{display:block;font-weight:bold;margin:12px 0 6px;font-size:14px}
+input,select,textarea,button{font:inherit;width:100%;padding:12px;border:1px solid var(--line);border-radius:9px;background:white;color:var(--dark)}
+button{background:var(--green);color:white;border:0;font-weight:bold;margin-top:10px;cursor:pointer}
+button.secondary{background:#e8f1ec;color:var(--green)}
+button.danger{background:#a83b3b}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:9px}
 #days{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-top:12px}
-.day{background:#eef5f1;padding:9px 2px;text-align:center;border-radius:8px;font-size:12px;min-height:48px;cursor:pointer}
-.day b{display:block;margin-bottom:5px}
-.Gündüz{background:#c9efd9}
+.day{background:#eef5f1;padding:8px 2px;text-align:center;border-radius:8px;font-size:11px;min-height:53px;cursor:pointer;overflow-wrap:anywhere}
+.day b{display:block;margin-bottom:5px;font-size:13px}
+.week{text-align:center;font-weight:bold;font-size:12px;padding:5px}
+.Gündüz,.Sabah{background:#c9efd9}
 .Gece{background:#dcdcff}
+.Akşam{background:#ffe3c5}
 .Boş{background:#e9eceb}
 .İzin{background:#ffe0e4}
+.Tatil{background:#fff0c7}
 .nav{display:flex;gap:8px}
 .nav button{width:50%}
-#status{font-size:12px;color:#176b55;margin-top:10px}
-.result{background:#eef5f1;border-radius:10px;padding:13px;margin-top:10px}
-.result strong{display:block;font-size:21px;margin-top:5px}
-.small{font-size:12px;color:#60736b;line-height:1.5}
+.result{background:#eef5f1;border-radius:10px;padding:13px;margin-top:9px;font-size:13px}
+.result strong{display:block;font-size:20px;margin-top:5px}
+small,.muted{color:#687b72;font-size:12px;line-height:1.5}
+#status{font-size:12px;color:var(--green);margin-top:9px}
+hr{border:0;border-top:1px solid var(--line);margin:17px 0}
+@media(max-width:420px){body{padding:8px}.card,header{padding:13px}.day{font-size:10px;min-height:48px}}
 </style>
 </head>
-
 <body>
 <main>
-
 <header>
 <h1>Vardiya Cepte</h1>
-<div>Vardiyanı kolayca takip et</div>
+<div>Vardiyanı, iznini ve mesaini kolayca takip et</div>
 </header>
 
 <section class="card">
-<h3>Vardiya ayarları</h3>
-
-<label>Başlangıç tarihi</label>
+<h3>⚙️ Vardiya ayarları</h3>
+<label>Vardiya başlangıç tarihi</label>
 <input id="start" type="date">
 
-<label>Vardiya düzeni</label>
-<select id="cycle">
-<option value="2-2">2 gündüz / 2 gece / 2 boş</option>
+<label>Hazır vardiya düzeni</label>
+<select id="preset">
+<option value="2-2-2">2 gündüz / 2 gece / 2 boş</option>
+<option value="3-3-3">3 gündüz / 3 gece / 3 boş</option>
 <option value="1-1-1">1 gündüz / 1 gece / 1 boş</option>
+<option value="four">Sabah / Akşam / Gece / Boş</option>
+<option value="custom">Kendi düzenim</option>
 </select>
 
-<label>Günlük çalışma süresi</label>
-<select id="hours">
+<label>Özel vardiya döngüsü</label>
+<input id="cycle" placeholder="Gündüz,Gündüz,Gece,Gece,Boş,Boş">
+<small>Özel düzen seçersen vardiya isimlerini virgülle ayır.</small>
+
+<label>Vardiya saatleri</label>
+<textarea id="shiftDefs" placeholder="Gündüz|08:00|20:00&#10;Gece|20:00|08:00"></textarea>
+<small>Her satıra vardiya adı|başlangıç|bitiş yaz.</small>
+
+<div class="row">
+<div>
+<label>Günlük çalışma saati</label>
+<select id="dailyHours">
 <option value="8">8 saat</option>
 <option value="12">12 saat</option>
 <option value="24">24 saat</option>
 </select>
-
-<button onclick="draw()">Takvimi oluştur</button>
+</div>
+<div>
+<label>Mesai katsayısı</label>
+<select id="multiplier">
+<option value="1.5">1,5 kat</option>
+<option value="2">2 kat</option>
+</select>
+</div>
+</div>
+<button id="saveSettings">Ayarları kaydet</button>
 <div id="status">Bilgilerin otomatik kaydedilir.</div>
 </section>
 
 <section class="card">
 <div class="nav">
-<button onclick="changeMonth(-1)">◀ Önceki ay</button>
-<button onclick="changeMonth(1)">Sonraki ay ▶</button>
+<button class="secondary" id="prev">◀ Önceki ay</button>
+<button class="secondary" id="next">Sonraki ay ▶</button>
 </div>
-<h3 id="month"></h3>
+<h3 id="month" style="margin-top:15px"></h3>
 <div id="days"></div>
+<p class="muted">Bir güne dokunarak vardiya durumunu değiştirebilirsin.</p>
+<div class="row">
+<div class="result">Gündüz<strong id="dayCount">0</strong></div>
+<div class="result">Gece<strong id="nightCount">0</strong></div>
+<div class="result">Boş<strong id="offCount">0</strong></div>
+<div class="result">İzin<strong id="leaveCount">0</strong></div>
+</div>
+</section>
+
+<section class="card">
+<h3>🏖️ İzin ve tatil takibi</h3>
+<label>Özel tatil tarihi</label>
+<input id="holidayDate" type="date">
+<label>Tatil adı</label>
+<input id="holidayName" placeholder="Örneğin: Bayram">
+<button id="addHoliday">Takvime tatil ekle</button>
+<div id="holidayList" class="muted"></div>
 </section>
 
 <section class="card">
 <h3>💰 Maaş ve mesai hesaplama</h3>
-
-<label>Aylık maaşın (TL)</label>
-<input id="salary" type="number" min="0" placeholder="Örnek: 50000">
-
+<label>Aylık net maaş (TL)</label>
+<input id="salary" type="number" min="0" placeholder="Örneğin: 60000">
 <label>Aylık normal çalışma saati</label>
-<input id="normal" type="number" min="1" value="180">
-
-<label>Fazla mesai katsayısı</label>
-<select id="multiplier">
-<option value="1.5">1,5 kat</option>
-<option value="2">2 kat</option>
-</select>
-
-<button onclick="calculate()">Hesapla</button>
-
-<div class="result">Aylık çalışma saati<strong id="totalHours">0 saat</strong></div>
-<div class="result">Fazla mesai saati<strong id="overtime">0 saat</strong></div>
-<div class="result">Tahmini fazla mesai ücreti<strong id="overtimePay">0 TL</strong></div>
-<div class="result">Maaş + tahmini mesai<strong id="totalPay">0 TL</strong></div>
-
-<p class="small">Bu hesaplama tahminidir. Gerçek fazla mesai ücreti bordro, sözleşme ve mevzuata göre farklılık gösterebilir.</p>
+<input id="monthlyHours" type="number" min="1" value="195">
+<label>Ek mesai saati</label>
+<input id="overtime" type="number" min="0" value="0">
+<button id="calculate">Hesapla</button>
+<div class="result">Saatlik ücret<strong id="hourlyResult">0 TL</strong></div>
+<div class="result">Mesai ücreti<strong id="overtimeResult">0 TL</strong></div>
+<div class="result">Toplam maaş + mesai<strong id="totalResult">0 TL</strong></div>
 </section>
 
 <section class="card">
-<b>Kullanım bilgisi</b>
-<p>Bir güne dokunarak Gündüz, Gece, Boş veya İzin olarak değiştirebilirsin. Değişiklikler telefonuna kaydedilir.</p>
+<h3>💾 Yedekleme ve geri yükleme</h3>
+<p class="muted">Vardiya ve ayar bilgilerini telefonuna yedekleyebilirsin.</p>
+<button id="backup">Yedeği indir</button>
+<label>Yedek dosyasını geri yükle</label>
+<input type="file" id="restoreFile" accept=".json,application/json">
+<button class="secondary" id="restore">Yedeği geri yükle</button>
 </section>
 
+<section class="card">
+<h3>📱 Uygulama</h3>
+<p class="muted">Tarayıcının menüsünden “Ana ekrana ekle” seçeneğiyle telefonuna kısayol ekleyebilirsin.</p>
+<button class="danger" id="reset">Tüm verileri sıfırla</button>
+</section>
 </main>
 
 <script>
 const $=id=>document.getElementById(id);
+const today=new Date();
+let viewYear=today.getFullYear();
+let viewMonth=today.getMonth();
+let data=JSON.parse(localStorage.getItem("vardiyaCepteYeni")||"{}");
 
-function localDate(d){
-return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+function dateKey(y,m,d){
+return y+"-"+String(m+1).padStart(2,"0")+"-"+String(d).padStart(2,"0");
 }
-
-let saved={};
-try{
-saved=JSON.parse(localStorage.getItem('vardiyaCepte')||'{}');
-}catch(e){saved={};}
-
-$('start').value=saved.start||localDate(new Date());
-$('cycle').value=saved.cycle||'2-2';
-$('hours').value=saved.hours||'8';
-$('salary').value=saved.salary||'';
-$('normal').value=saved.normal||'180';
-$('multiplier').value=saved.multiplier||'1.5';
-
-let edits=saved.edits||{};
-let shown=new Date();
-shown.setDate(1);
-
-function save(){
-localStorage.setItem('vardiyaCepte',JSON.stringify({
-start:$('start').value,
-cycle:$('cycle').value,
-hours:$('hours').value,
-salary:$('salary').value,
-normal:$('normal').value,
-multiplier:$('multiplier').value,
-edits:edits
-}));
-$('status').textContent='✓ Bilgilerin kaydedildi.';
+function parseDate(s){
+const p=s.split("-").map(Number);
+return new Date(p[0],p[1]-1,p[2]);
 }
-
-function changeMonth(n){
-shown.setMonth(shown.getMonth()+n);
-draw();
+function defaultCycle(){
+return ["Gündüz","Gündüz","Gece","Gece","Boş","Boş"];
 }
-
-function getShift(d){
-const start=new Date($('start').value+'T12:00:00');
-const delta=Math.round((d-start)/86400000);
-
-const seq=$('cycle').value==='2-2'
-?['Gündüz','Gündüz','Gece','Gece','Boş','Boş']
-:['Gündüz','Gece','Boş'];
-
-const key=localDate(d);
-return edits[key]||seq[((delta%seq.length)+seq.length)%seq.length];
+function cycleList(){
+if($("preset").value==="custom"){
+return $("cycle").value.split(",").map(x=>x.trim()).filter(Boolean);
 }
-
-function draw(){
-const first=new Date(shown.getFullYear(),shown.getMonth(),1);
-const daysInMonth=new Date(shown.getFullYear(),shown.getMonth()+1,0).getDate();
-
-$('month').textContent=shown.toLocaleDateString('tr-TR',{month:'long',year:'numeric'});
-
-$('days').innerHTML=['Pzt','Sal','Çar','Per','Cum','Cmt','Paz'].map(n=>
-'<div class="day"><b>'+n+'</b></div>'
-).join('');
-
-for(let i=0;i<(first.getDay()+6)%7;i++){
-$('days').innerHTML+='<div></div>';
+if($("preset").value==="3-3-3"){
+return ["Gündüz","Gündüz","Gündüz","Gece","Gece","Gece","Boş","Boş","Boş"];
 }
-
-for(let n=1;n<=daysInMonth;n++){
-const d=new Date(shown.getFullYear(),shown.getMonth(),n,12);
-const key=localDate(d);
-const v=getShift(d);
-
-const el=document.createElement('div');
-el.className='day '+v;
-el.innerHTML='<b>'+n+'</b>'+v;
-
-el.onclick=()=>{
-const choices=['Gündüz','Gece','Boş','İzin'];
-const current=getShift(d);
-edits[key]=choices[(choices.indexOf(current)+1)%choices.length];
-save();
-draw();
+if($("preset").value==="1-1-1"){
+return ["Gündüz","Gece","Boş"];
+}
+if($("preset").value==="four"){
+return ["Sabah","Akşam","Gece","Boş"];
+}
+return defaultCycle();
+}
+function saveData(){
+data.settings={
+start:$("start").value,
+preset:$("preset").value,
+cycle:$("cycle").value,
+shiftDefs:$("shiftDefs").value,
+dailyHours:$("dailyHours").value,
+multiplier:$("multiplier").value,
+salary:$("salary").value,
+monthlyHours:$("monthlyHours").value,
+overtime:$("overtime").value
 };
-
-$('days').appendChild(el);
+localStorage.setItem("vardiyaCepteYeni",JSON.stringify(data));
 }
-
-calculate();
+function loadSettings(){
+const s=data.settings||{};
+$("start").value=s.start||dateKey(today.getFullYear(),today.getMonth(),today.getDate());
+$("preset").value=s.preset||"2-2-2";
+$("cycle").value=s.cycle||"";
+$("shiftDefs").value=s.shiftDefs||"Gündüz|08:00|20:00\nGece|20:00|08:00";
+$("dailyHours").value=s.dailyHours||"12";
+$("multiplier").value=s.multiplier||"1.5";
+$("salary").value=s.salary||"";
+$("monthlyHours").value=s.monthlyHours||"195";
+$("overtime").value=s.overtime||"0";
 }
-
-function money(n){
-return n.toLocaleString('tr-TR',{
-minimumFractionDigits:2,
-maximumFractionDigits:2
-})+' TL';
+function getShift(key,index){
+if(data.days&&data.days[key])return data.days[key];
+const cycle=cycleList();
+const start=$("start").value;
+if(!start||!cycle.length)return "Boş";
+const diff=Math.round((parseDate(key)-parseDate(start))/86400000);
+return cycle[((diff%cycle.length)+cycle.length)%cycle.length];
 }
-
-function calculate(){
-const daysInMonth=new Date(shown.getFullYear(),shown.getMonth()+1,0).getDate();
-let workingDays=0;
-
-for(let n=1;n<=daysInMonth;n++){
-const d=new Date(shown.getFullYear(),shown.getMonth(),n,12);
-const v=getShift(d);
-if(v==='Gündüz'||v==='Gece')workingDays++;
+function render(){
+$("month").textContent=new Date(viewYear,viewMonth,1).toLocaleDateString("tr-TR",{month:"long",year:"numeric"});
+const first=new Date(viewYear,viewMonth,1);
+const total=new Date(viewYear,viewMonth+1,0).getDate();
+const offset=(first.getDay()+6)%7;
+const names=["Pzt","Sal","Çar","Per","Cum","Cmt","Paz"];
+let html=names.map(n=>`<div class="week">${n}</div>`).join("");
+for(let i=0;i<offset;i++)html+="<div></div>";
+let counts={"Gündüz":0,"Gece":0,"Boş":0,"İzin":0};
+for(let d=1;d<=total;d++){
+const key=dateKey(viewYear,viewMonth,d);
+const shift=getShift(key,d);
+if(counts[shift]!==undefined)counts[shift]++;
+const holiday=data.holidays&&data.holidays[key];
+const shown=holiday?"Tatil":shift;
+html+=`<div class="day ${shown}" data-date="${key}">
+<b>${d}</b>${holiday?"🎉 "+holiday:shift}
+</div>`;
 }
-
-const dailyHours=Number($('hours').value)||8;
-const normal=Number($('normal').value)||0;
-const salary=Number($('salary').value)||0;
-const multiplier=Number($('multiplier').value)||1.5;
-
-const totalHours=workingDays*dailyHours;
-const overtime=Math.max(0,totalHours-normal);
-const hourly=normal>0?salary/normal:0;
-const overtimePay=overtime*hourly*multiplier;
-
-$('totalHours').textContent=totalHours+' saat';
-$('overtime').textContent=overtime+' saat';
-$('overtimePay').textContent=money(overtimePay);
-$('totalPay').textContent=money(salary+overtimePay);
-}
-
-['start','cycle','hours','salary','normal','multiplier'].forEach(id=>{
-$(id).addEventListener('change',()=>{
-save();
-draw();
+$("days").innerHTML=html;
+$("dayCount").textContent=counts["Gündüz"];
+$("nightCount").textContent=counts["Gece"];
+$("offCount").textContent=counts["Boş"];
+$("leaveCount").textContent=counts["İzin"];
+document.querySelectorAll(".day").forEach(el=>{
+el.addEventListener("click",()=>{
+const key=el.dataset.date;
+const cycle=cycleList();
+const options=[...new Set([...cycle,"İzin","Boş"])];
+const current=getShift(key);
+const next=(options.indexOf(current)+1)%options.length;
+data.days=data.days||{};
+data.days[key]=options[next];
+saveData();
+render();
 });
 });
-
-draw();
-
-// Uygulamayı çevrimdışı kullanıma hazırlar.
-if('serviceWorker' in navigator){
-window.addEventListener('load',()=>{
-navigator.serviceWorker.register('./service-worker.js')
-.then(()=>console.log('Vardiya Cepte çevrimdışı desteği hazır.'))
-.catch(error=>console.log('Service Worker hatası:',error));
+renderHolidayList();
+}
+function renderHolidayList(){
+const h=data.holidays||{};
+const entries=Object.entries(h).sort((a,b)=>a[0].localeCompare(b[0]));
+$("holidayList").innerHTML=entries.length?
+entries.map(([date,name])=>`${date} — ${name}`).join("<br>"):
+"Henüz özel tatil eklenmedi.";
+}
+$("saveSettings").onclick=()=>{
+if($("preset").value==="custom"&&!$("cycle").value.trim()){
+alert("Özel vardiya döngüsünü yazmalısın.");
+return;
+}
+saveData();
+render();
+$("status").textContent="Ayarların kaydedildi.";
+};
+$("preset").onchange=()=>{
+if($("preset").value==="custom")$("cycle").focus();
+};
+$("prev").onclick=()=>{
+viewMonth--;
+if(viewMonth<0){viewMonth=11;viewYear--;}
+render();
+};
+$("next").onclick=()=>{
+viewMonth++;
+if(viewMonth>11){viewMonth=0;viewYear++;}
+render();
+};
+$("addHoliday").onclick=()=>{
+const date=$("holidayDate").value;
+const name=$("holidayName").value.trim();
+if(!date||!name){alert("Tarih ve tatil adını gir.");return;}
+data.holidays=data.holidays||{};
+data.holidays[date]=name;
+saveData();
+$("holidayDate").value="";
+$("holidayName").value="";
+render();
+};
+$("calculate").onclick=()=>{
+const salary=Number($("salary").value)||0;
+const hours=Number($("monthlyHours").value)||195;
+const overtime=Number($("overtime").value)||0;
+const rate=hours?salary/hours:0;
+const extra=rate*Number($("multiplier").value)*overtime;
+const money=n=>n.toLocaleString("tr-TR",{style:"currency",currency:"TRY"});
+$("hourlyResult").textContent=money(rate);
+$("overtimeResult").textContent=money(extra);
+$("totalResult").textContent=money(salary+extra);
+saveData();
+};
+$("backup").onclick=()=>{
+saveData();
+const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
+const url=URL.createObjectURL(blob);
+const a=document.createElement("a");
+a.href=url;
+a.download="vardiya-cepte-yedek.json";
+a.click();
+URL.revokeObjectURL(url);
+};
+$("restore").onclick=()=>{
+const file=$("restoreFile").files[0];
+if(!file){alert("Önce yedek dosyasını seç.");return;}
+const reader=new FileReader();
+reader.onload=()=>{
+try{
+data=JSON.parse(reader.result);
+localStorage.setItem("vardiyaCepteYeni",JSON.stringify(data));
+loadSettings();
+render();
+alert("Yedek başarıyla geri yüklendi.");
+}catch(e){alert("Dosya okunamadı. Geçerli bir yedek seç.");}
+};
+reader.readAsText(file);
+};
+$("reset").onclick=()=>{
+if(confirm("Bütün vardiya ve ayar bilgilerin silinsin mi?")){
+localStorage.removeItem("vardiyaCepteYeni");
+data={};
+loadSettings();
+render();
+alert("Veriler sıfırlandı.");
+}
+};
+loadSettings();
+render();
+if("serviceWorker" in navigator){
+window.addEventListener("load",()=>{
+navigator.serviceWorker.register("./service-worker.js").catch(()=>{});
 });
 }
 </script>
-
 </body>
 </html>
-
