@@ -1,11 +1,15 @@
 
+
 <!doctype html>
 <html lang="tr">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#176b55">
+<meta name="description" content="Vardiya takvimi, maaş ve mesai hesaplama uygulaması.">
+<link rel="manifest" href="./manifest.json">
 <title>Vardiya Cepte</title>
+
 <style>
 *{box-sizing:border-box}
 body{font-family:Arial,sans-serif;background:#f2f6f4;color:#18332b;margin:0;padding:18px}
@@ -31,8 +35,10 @@ button{background:#176b55;color:white;border:0;margin-top:12px;font-weight:bold}
 .small{font-size:12px;color:#60736b;line-height:1.5}
 </style>
 </head>
+
 <body>
 <main>
+
 <header>
 <h1>Vardiya Cepte</h1>
 <div>Vardiyanı kolayca takip et</div>
@@ -40,6 +46,7 @@ button{background:#176b55;color:white;border:0;margin-top:12px;font-weight:bold}
 
 <section class="card">
 <h3>Vardiya ayarları</h3>
+
 <label>Başlangıç tarihi</label>
 <input id="start" type="date">
 
@@ -71,6 +78,7 @@ button{background:#176b55;color:white;border:0;margin-top:12px;font-weight:bold}
 
 <section class="card">
 <h3>💰 Maaş ve mesai hesaplama</h3>
+
 <label>Aylık maaşın (TL)</label>
 <input id="salary" type="number" min="0" placeholder="Örnek: 50000">
 
@@ -97,6 +105,7 @@ button{background:#176b55;color:white;border:0;margin-top:12px;font-weight:bold}
 <b>Kullanım bilgisi</b>
 <p>Bir güne dokunarak Gündüz, Gece, Boş veya İzin olarak değiştirebilirsin. Değişiklikler telefonuna kaydedilir.</p>
 </section>
+
 </main>
 
 <script>
@@ -143,9 +152,11 @@ draw();
 function getShift(d){
 const start=new Date($('start').value+'T12:00:00');
 const delta=Math.round((d-start)/86400000);
+
 const seq=$('cycle').value==='2-2'
 ?['Gündüz','Gündüz','Gece','Gece','Boş','Boş']
 :['Gündüz','Gece','Boş'];
+
 const key=localDate(d);
 return edits[key]||seq[((delta%seq.length)+seq.length)%seq.length];
 }
@@ -168,6 +179,7 @@ for(let n=1;n<=daysInMonth;n++){
 const d=new Date(shown.getFullYear(),shown.getMonth(),n,12);
 const key=localDate(d);
 const v=getShift(d);
+
 const el=document.createElement('div');
 el.className='day '+v;
 el.innerHTML='<b>'+n+'</b>'+v;
@@ -182,6 +194,7 @@ draw();
 
 $('days').appendChild(el);
 }
+
 calculate();
 }
 
@@ -226,7 +239,17 @@ draw();
 });
 
 draw();
+
+// Uygulamayı çevrimdışı kullanıma hazırlar.
+if('serviceWorker' in navigator){
+window.addEventListener('load',()=>{
+navigator.serviceWorker.register('./service-worker.js')
+.then(()=>console.log('Vardiya Cepte çevrimdışı desteği hazır.'))
+.catch(error=>console.log('Service Worker hatası:',error));
+});
+}
 </script>
+
 </body>
 </html>
 
