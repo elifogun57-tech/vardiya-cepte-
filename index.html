@@ -1,4 +1,5 @@
 
+
 <!doctype html>
 <html lang="tr">
 <head>
@@ -26,26 +27,42 @@ button{background:#176b55;color:white;border:0;margin-top:12px;font-weight:bold}
 .nav{display:flex;gap:8px}
 .nav button{width:50%}
 #status{font-size:12px;color:#176b55;margin-top:10px}
+.result{background:#eef5f1;border-radius:10px;padding:13px;margin-top:10px}
+.result strong{display:block;font-size:21px;margin-top:5px}
+.small{font-size:12px;color:#60736b;line-height:1.5}
 </style>
 </head>
 <body>
 <main>
+
 <header>
 <h1>Vardiya Cepte</h1>
 <div>Vardiyanı kolayca takip et</div>
 </header>
+
 <section class="card">
 <h3>Vardiya ayarları</h3>
+
 <label>Başlangıç tarihi</label>
 <input id="start" type="date">
+
 <label>Vardiya düzeni</label>
 <select id="cycle">
 <option value="2-2">2 gündüz / 2 gece / 2 boş</option>
 <option value="1-1-1">1 gündüz / 1 gece / 1 boş</option>
 </select>
+
+<label>Günlük çalışma süresi</label>
+<select id="hours">
+<option value="8">8 saat</option>
+<option value="12">12 saat</option>
+<option value="24">24 saat</option>
+</select>
+
 <button onclick="draw()">Takvimi oluştur</button>
 <div id="status">Bilgilerin otomatik kaydedilir.</div>
 </section>
+
 <section class="card">
 <div class="nav">
 <button onclick="changeMonth(-1)">◀ Önceki ay</button>
@@ -54,54 +71,193 @@ button{background:#176b55;color:white;border:0;margin-top:12px;font-weight:bold}
 <h3 id="month"></h3>
 <div id="days"></div>
 </section>
+
+<section class="card">
+<h3>💰 Maaş ve mesai hesaplama</h3>
+
+<label>Aylık maaşın (TL)</label>
+<input id="salary" type="number" min="0" placeholder="Örnek: 50000">
+
+<label>Aylık normal çalışma saati</label>
+<input id="normal" type="number" min="1" value="180">
+
+<label>Fazla mesai katsayısı</label>
+<select id="multiplier">
+<option value="1.5">1,5 kat</option>
+<option value="2">2 kat</option>
+</select>
+
+<button onclick="calculate()">Hesapla</button>
+
+<div class="result">
+Aylık çalışma saati
+<strong id="totalHours">0 saat</strong>
+</div>
+
+<div class="result">
+Fazla mesai saati
+<strong id="overtime">0 saat</strong>
+</div>
+
+<div class="result">
+Tahmini fazla mesai ücreti
+<strong id="overtimePay">0 TL</strong>
+</div>
+
+<div class="result">
+Maaş + tahmini mesai
+<strong id="totalPay">0 TL</strong>
+</div>
+
+<p class="small">
+Hesaplama, seçilen vardiya süresi ve takvimdeki çalışma günleri üzerinden tahmini olarak yapılır. Fazla mesai, aylık normal saat sınırını aşan süreye göre hesaplanır. Gerçek ücret; bordro, sözleşme ve mevzuata göre farklılık gösterebilir.
+</p>
+</section>
+
 <section class="card">
 <b>Kullanım bilgisi</b>
 <p>Bir güne dokunarak Gündüz, Gece, Boş veya İzin olarak değiştirebilirsin. Değişiklikler telefonuna kaydedilir.</p>
 </section>
+
 </main>
+
 <script>
 const $=id=>document.getElementById(id);
+
 function localDate(d){
 return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 }
+
 let saved={};
-try{saved=JSON.parse(localStorage.getItem('vardiyaCepte')||'{}')}catch(e){}
+try{
+saved=JSON.parse(localStorage.getItem('vardiyaCepte')||'{}');
+}catch(e){saved={};}
+
 $('start').value=saved.start||localDate(new Date());
 $('cycle').value=saved.cycle||'2-2';
+$('hours').value=saved.hours||'8';
+$('salary').value=saved.salary||'';
+$('normal').value=saved.normal||'180';
+$('multiplier').value=saved.multiplier||'1.5';
+
 let edits=saved.edits||{};
 let shown=new Date();
 shown.setDate(1);
+
 function save(){
-localStorage.setItem('vardiyaCepte',JSON.stringify({start:$('start').value,cycle:$('cycle').value,edits}));
+localStorage.setItem('vardiyaCepte',JSON.stringify({
+start:$('start').value,
+cycle:$('cycle').value,
+hours:$('hours').value,
+salary:$('salary').value,
+normal:$('normal').value,
+multiplier:$('multiplier').value,
+edits:edits
+}));
 $('status').textContent='✓ Bilgilerin kaydedildi.';
 }
-function changeMonth(n){shown.setMonth(shown.getMonth()+n);draw()}
+
+function changeMonth(n){
+shown.setMonth(shown.getMonth()+n);
+draw();
+}
+
 function draw(){
 const first=new Date(shown.getFullYear(),shown.getMonth(),1);
 const total=new Date(shown.getFullYear(),shown.getMonth()+1,0).getDate();
-$('month').textContent=shown.toLocaleDateString('tr-TR',{month:'long',year:'numeric'});
-$('days').innerHTML=['Pzt','Sal','Çar','Per','Cum','Cmt','Paz'].map(n=>'<div class="day"><b>'+n+'</b></div>').join('');
+
+$('month').textContent=shown.toLocaleDateString('tr-TR',{
+month:'long',year:'numeric'
+});
+
+$('days').innerHTML=['Pzt','Sal','Çar','Per','Cum','Cmt','Paz'].map(n=>
+'<div class="day"><b>'+n+'</b></div>'
+).join('');
+
 const start=new Date($('start').value+'T12:00:00');
-const seq=$('cycle').value==='2-2'?['Gündüz','Gündüz','Gece','Gece','Boş','Boş']:['Gündüz','Gece','Boş'];
-for(let i=0;i<(first.getDay()+6)%7;i++)$('days').innerHTML+='<div></div>';
+
+const seq=$('cycle').value==='2-2'
+?['Gündüz','Gündüz','Gece','Gece','Boş','Boş']
+:['Gündüz','Gece','Boş'];
+
+for(let i=0;i<(first.getDay()+6)%7;i++){
+$('days').innerHTML+='<div></div>';
+}
+
 for(let n=1;n<=total;n++){
 const d=new Date(shown.getFullYear(),shown.getMonth(),n,12);
 const delta=Math.round((d-start)/86400000);
 const key=localDate(d);
 const v=edits[key]||seq[((delta%seq.length)+seq.length)%seq.length];
+
 const el=document.createElement('div');
 el.className='day '+v;
 el.innerHTML='<b>'+n+'</b>'+v;
+
 el.onclick=()=>{
 const a=['Gündüz','Gece','Boş','İzin'];
 edits[key]=a[(a.indexOf(v)+1)%a.length];
-save();draw();
+save();
+draw();
 };
+
 $('days').appendChild(el);
 }
+
+calculate();
 }
-$('start').addEventListener('change',()=>{save();draw()});
-$('cycle').addEventListener('change',()=>{save();draw()});
+
+function money(n){
+return n.toLocaleString('tr-TR',{
+minimumFractionDigits:2,
+maximumFractionDigits:2
+})+' TL';
+}
+
+function calculate(){
+const total=new Date(shown.getFullYear(),shown.getMonth()+1,0).getDate();
+const start=new Date($('start').value+'T12:00:00');
+
+const seq=$('cycle').value==='2-2'
+?['Gündüz','Gündüz','Gece','Gece','Boş','Boş']
+:['Gündüz','Gece','Boş'];
+
+let workingDays=0;
+
+for(let n=1;n<=total;n++){
+const d=new Date(shown.getFullYear(),shown.getMonth(),n,12);
+const delta=Math.round((d-start)/86400000);
+const key=localDate(d);
+const v=edits[key]||seq[((delta%seq.length)+seq.length)%seq.length];
+
+if(v==='Gündüz'||v==='Gece'){
+workingDays++;
+}
+}
+
+const dailyHours=Number($('hours').value)||8;
+const normal=Number($('normal').value)||0;
+const salary=Number($('salary').value)||0;
+const multiplier=Number($('multiplier').value)||1.5;
+
+const total=workingDays*dailyHours;
+const overtime=Math.max(0,total-normal);
+const hourly=normal>0?salary/normal:0;
+const overtimePay=overtime*hourly*multiplier;
+
+$('totalHours').textContent=total+' saat';
+$('overtime').textContent=overtime+' saat';
+$('overtimePay').textContent=money(overtimePay);
+$('totalPay').textContent=money(salary+overtimePay);
+}
+
+['start','cycle','hours','salary','normal','multiplier'].forEach(id=>{
+$(id).addEventListener('change',()=>{
+save();
+draw();
+});
+});
+
 draw();
 </script>
 </body>
