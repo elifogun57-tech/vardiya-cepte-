@@ -40,6 +40,10 @@ button.danger{background:#a83b3b}
 small,.muted{color:#687b72;font-size:12px;line-height:1.5}
 #status{font-size:12px;color:var(--green);margin-top:9px}
 hr{border:0;border-top:1px solid var(--line);margin:17px 0}
+.work-row{display:grid;grid-template-columns:1fr 105px;gap:10px;align-items:center;padding:9px 0;border-bottom:1px solid var(--line)}
+.work-row input{padding:9px}
+.work-date{font-size:13px;font-weight:bold}
+.work-shift{font-size:11px;color:#687b72;margin-top:4px}
 @media(max-width:420px){body{padding:8px}.card,header{padding:13px}.day{font-size:10px;min-height:48px}}
 </style>
 </head>
@@ -66,7 +70,7 @@ hr{border:0;border-top:1px solid var(--line);margin:17px 0}
 
 <label>Özel vardiya döngüsü</label>
 <input id="cycle" placeholder="Gündüz,Gündüz,Gece,Gece,Boş,Boş">
-<small>Özel düzen seçersen vardiya isimlerini virgülle ayır.</small>
+<small>Özel düzen için vardiya isimlerini virgülle ayır.</small>
 
 <label>Vardiya saatleri</label>
 <textarea id="shiftDefs" placeholder="Gündüz|08:00|20:00&#10;Gece|20:00|08:00"></textarea>
@@ -110,6 +114,14 @@ hr{border:0;border-top:1px solid var(--line);margin:17px 0}
 </section>
 
 <section class="card">
+<h3>⏱️ Günlük mesai girişi</h3>
+<p class="muted">Her gün fiilen çalıştığın toplam saati gir. Günlük 8 saati aşan süre mesai hesabına eklenecek. Çalışmadığın günleri boş bırakabilirsin.</p>
+<div id="workList"></div>
+<div class="result">Bu ay toplam çalışma<strong id="workedTotal">0 saat</strong></div>
+<div class="result">Bu ay toplam günlük fazla çalışma<strong id="dailyOvertimeTotal">0 saat</strong></div>
+</section>
+
+<section class="card">
 <h3>🏖️ İzin ve tatil takibi</h3>
 <label>Özel tatil tarihi</label>
 <input id="holidayDate" type="date">
@@ -124,18 +136,19 @@ hr{border:0;border-top:1px solid var(--line);margin:17px 0}
 <label>Aylık net maaş (TL)</label>
 <input id="salary" type="number" min="0" placeholder="Örneğin: 60000">
 <label>Aylık normal çalışma saati</label>
-<input id="monthlyHours" type="number" min="1" value="195">
-<label>Ek mesai saati</label>
-<input id="overtime" type="number" min="0" value="0">
-<button id="calculate">Hesapla</button>
+<input id="monthlyHours" type="number" min="1" value="180">
+<p class="muted">Saatlik ücret, maaşın aylık normal çalışma saatine bölünmesiyle hesaplanır.</p>
+<button id="calculate">Mesai ücretini hesapla</button>
 <div class="result">Saatlik ücret<strong id="hourlyResult">0 TL</strong></div>
-<div class="result">Mesai ücreti<strong id="overtimeResult">0 TL</strong></div>
-<div class="result">Toplam maaş + mesai<strong id="totalResult">0 TL</strong></div>
+<div class="result">Günlük fazla çalışma<strong id="overtimeResult">0 saat</strong></div>
+<div class="result">Tahmini mesai ücreti<strong id="overtimePay">0 TL</strong></div>
+<div class="result">Maaş + tahmini mesai<strong id="totalResult">0 TL</strong></div>
+<p class="muted">Bu bölüm günlük 8 saati aşan süreleri basit tahmini hesaplar. Yasal fazla çalışma hesabı haftalık çalışma süresi, denkleştirme ve ilgili mevzuata göre farklı olabilir.</p>
 </section>
 
 <section class="card">
 <h3>💾 Yedekleme ve geri yükleme</h3>
-<p class="muted">Vardiya ve ayar bilgilerini telefonuna yedekleyebilirsin.</p>
+<p class="muted">Vardiya ve mesai bilgilerini telefonuna yedekleyebilirsin.</p>
 <button id="backup">Yedeği indir</button>
 <label>Yedek dosyasını geri yükle</label>
 <input type="file" id="restoreFile" accept=".json,application/json">
@@ -154,7 +167,16 @@ const $=id=>document.getElementById(id);
 const today=new Date();
 let viewYear=today.getFullYear();
 let viewMonth=today.getMonth();
-let data=JSON.parse(localStorage.getItem("vardiyaCepteYeni")||"{}");
+
+let data={};
+try{
+data=JSON.parse(localStorage.getItem("vardiyaCepteYeni")||"{}");
+}catch(e){
+data={};
+}
+data.days=data.days||{};
+data.holidays=data.holidays||{};
+data.workHours=data.workHours||{};
 
 function dateKey(y,m,d){
 return y+"-"+String(m+1).padStart(2,"0")+"-"+String(d).padStart(2,"0");
@@ -190,10 +212,10 @@ shiftDefs:$("shiftDefs").value,
 dailyHours:$("dailyHours").value,
 multiplier:$("multiplier").value,
 salary:$("salary").value,
-monthlyHours:$("monthlyHours").value,
-overtime:$("overtime").value
+monthlyHours:$("monthlyHours").value
 };
 localStorage.setItem("vardiyaCepteYeni",JSON.stringify(data));
+$("status").textContent="✓ Bilgilerin kaydedildi.";
 }
 function loadSettings(){
 const s=data.settings||{};
@@ -201,19 +223,24 @@ $("start").value=s.start||dateKey(today.getFullYear(),today.getMonth(),today.get
 $("preset").value=s.preset||"2-2-2";
 $("cycle").value=s.cycle||"";
 $("shiftDefs").value=s.shiftDefs||"Gündüz|08:00|20:00\nGece|20:00|08:00";
-$("dailyHours").value=s.dailyHours||"12";
+$("dailyHours").value=s.dailyHours||"8";
 $("multiplier").value=s.multiplier||"1.5";
 $("salary").value=s.salary||"";
-$("monthlyHours").value=s.monthlyHours||"195";
-$("overtime").value=s.overtime||"0";
+$("monthlyHours").value=s.monthlyHours||"180";
 }
-function getShift(key,index){
-if(data.days&&data.days[key])return data.days[key];
+function getShift(key){
+if(data.days[key])return data.days[key];
 const cycle=cycleList();
 const start=$("start").value;
 if(!start||!cycle.length)return "Boş";
 const diff=Math.round((parseDate(key)-parseDate(start))/86400000);
 return cycle[((diff%cycle.length)+cycle.length)%cycle.length];
+}
+function monthDates(){
+const total=new Date(viewYear,viewMonth+1,0).getDate();
+const dates=[];
+for(let d=1;d<=total;d++)dates.push(dateKey(viewYear,viewMonth,d));
+return dates;
 }
 function render(){
 $("month").textContent=new Date(viewYear,viewMonth,1).toLocaleDateString("tr-TR",{month:"long",year:"numeric"});
@@ -226,12 +253,12 @@ for(let i=0;i<offset;i++)html+="<div></div>";
 let counts={"Gündüz":0,"Gece":0,"Boş":0,"İzin":0};
 for(let d=1;d<=total;d++){
 const key=dateKey(viewYear,viewMonth,d);
-const shift=getShift(key,d);
+const shift=getShift(key);
 if(counts[shift]!==undefined)counts[shift]++;
-const holiday=data.holidays&&data.holidays[key];
+const holiday=data.holidays[key];
 const shown=holiday?"Tatil":shift;
 html+=`<div class="day ${shown}" data-date="${key}">
-<b>${d}</b>${holiday?"🎉 "+holiday:shift}
+<b>${d}</b>${holiday?"🎉 "+escapeHTML(holiday):shift}
 </div>`;
 }
 $("days").innerHTML=html;
@@ -239,27 +266,103 @@ $("dayCount").textContent=counts["Gündüz"];
 $("nightCount").textContent=counts["Gece"];
 $("offCount").textContent=counts["Boş"];
 $("leaveCount").textContent=counts["İzin"];
+
 document.querySelectorAll(".day").forEach(el=>{
 el.addEventListener("click",()=>{
 const key=el.dataset.date;
-const cycle=cycleList();
-const options=[...new Set([...cycle,"İzin","Boş"])];
+const options=[...new Set([...cycleList(),"İzin","Boş"])];
 const current=getShift(key);
-const next=(options.indexOf(current)+1)%options.length;
-data.days=data.days||{};
-data.days[key]=options[next];
+const index=options.indexOf(current);
+data.days[key]=options[(index+1+options.length)%options.length];
 saveData();
 render();
 });
 });
 renderHolidayList();
+renderWorkList();
+}
+function escapeHTML(value){
+return String(value).replace(/[&<>"']/g,c=>({
+"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+}[c]));
 }
 function renderHolidayList(){
-const h=data.holidays||{};
-const entries=Object.entries(h).sort((a,b)=>a[0].localeCompare(b[0]));
+const entries=Object.entries(data.holidays).sort((a,b)=>a[0].localeCompare(b[0]));
 $("holidayList").innerHTML=entries.length?
-entries.map(([date,name])=>`${date} — ${name}`).join("<br>"):
+entries.map(([date,name])=>`${escapeHTML(date)} — ${escapeHTML(name)}`).join("<br>"):
 "Henüz özel tatil eklenmedi.";
+}
+function renderWorkList(){
+const dates=monthDates();
+let html="";
+dates.forEach(key=>{
+const d=Number(key.slice(8));
+const shift=getShift(key);
+const value=data.workHours[key]??"";
+html+=`
+<div class="work-row">
+<div>
+<div class="work-date">${d} ${new Date(viewYear,viewMonth,d).toLocaleDateString("tr-TR",{weekday:"long"})}</div>
+<div class="work-shift">${escapeHTML(shift)}</div>
+</div>
+<input type="number" min="0" max="24" step="0.5"
+data-work-date="${key}" value="${value}" placeholder="Saat">
+</div>`;
+});
+$("workList").innerHTML=html;
+
+document.querySelectorAll("[data-work-date]").forEach(input=>{
+input.addEventListener("change",()=>{
+const key=input.dataset.workDate;
+const value=input.value.trim();
+if(value===""){
+delete data.workHours[key];
+}else{
+const hours=Number(value);
+if(!Number.isFinite(hours)||hours<0||hours>24){
+alert("Çalışma süresi 0 ile 24 saat arasında olmalı.");
+input.value="";
+return;
+}
+data.workHours[key]=hours;
+}
+saveData();
+updateWorkTotals();
+});
+});
+updateWorkTotals();
+}
+function getMonthWorkTotals(){
+let worked=0;
+let overtime=0;
+monthDates().forEach(key=>{
+const hours=Number(data.workHours[key])||0;
+worked+=hours;
+overtime+=Math.max(0,hours-8);
+});
+return {worked,overtime};
+}
+function updateWorkTotals(){
+const totals=getMonthWorkTotals();
+$("workedTotal").textContent=totals.worked+" saat";
+$("dailyOvertimeTotal").textContent=totals.overtime+" saat";
+}
+function money(n){
+return n.toLocaleString("tr-TR",{style:"currency",currency:"TRY"});
+}
+function calculate(){
+const salary=Number($("salary").value)||0;
+const monthlyHours=Number($("monthlyHours").value)||180;
+const multiplier=Number($("multiplier").value)||1.5;
+const totals=getMonthWorkTotals();
+const hourly=monthlyHours>0?salary/monthlyHours:0;
+const pay=hourly*multiplier*totals.overtime;
+
+$("hourlyResult").textContent=money(hourly);
+$("overtimeResult").textContent=totals.overtime+" saat";
+$("overtimePay").textContent=money(pay);
+$("totalResult").textContent=money(salary+pay);
+saveData();
 }
 $("saveSettings").onclick=()=>{
 if($("preset").value==="custom"&&!$("cycle").value.trim()){
@@ -268,7 +371,6 @@ return;
 }
 saveData();
 render();
-$("status").textContent="Ayarların kaydedildi.";
 };
 $("preset").onchange=()=>{
 if($("preset").value==="custom")$("cycle").focus();
@@ -286,26 +388,18 @@ render();
 $("addHoliday").onclick=()=>{
 const date=$("holidayDate").value;
 const name=$("holidayName").value.trim();
-if(!date||!name){alert("Tarih ve tatil adını gir.");return;}
-data.holidays=data.holidays||{};
+if(!date||!name){
+alert("Tarih ve tatil adını gir.");
+return;
+}
 data.holidays[date]=name;
 saveData();
 $("holidayDate").value="";
 $("holidayName").value="";
 render();
 };
-$("calculate").onclick=()=>{
-const salary=Number($("salary").value)||0;
-const hours=Number($("monthlyHours").value)||195;
-const overtime=Number($("overtime").value)||0;
-const rate=hours?salary/hours:0;
-const extra=rate*Number($("multiplier").value)*overtime;
-const money=n=>n.toLocaleString("tr-TR",{style:"currency",currency:"TRY"});
-$("hourlyResult").textContent=money(rate);
-$("overtimeResult").textContent=money(extra);
-$("totalResult").textContent=money(salary+extra);
-saveData();
-};
+$("calculate").onclick=calculate;
+
 $("backup").onclick=()=>{
 saveData();
 const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
@@ -318,23 +412,33 @@ URL.revokeObjectURL(url);
 };
 $("restore").onclick=()=>{
 const file=$("restoreFile").files[0];
-if(!file){alert("Önce yedek dosyasını seç.");return;}
+if(!file){
+alert("Önce yedek dosyasını seç.");
+return;
+}
 const reader=new FileReader();
 reader.onload=()=>{
 try{
-data=JSON.parse(reader.result);
+const imported=JSON.parse(reader.result);
+if(!imported||typeof imported!=="object")throw new Error();
+data=imported;
+data.days=data.days||{};
+data.holidays=data.holidays||{};
+data.workHours=data.workHours||{};
 localStorage.setItem("vardiyaCepteYeni",JSON.stringify(data));
 loadSettings();
 render();
 alert("Yedek başarıyla geri yüklendi.");
-}catch(e){alert("Dosya okunamadı. Geçerli bir yedek seç.");}
+}catch(e){
+alert("Dosya okunamadı. Geçerli bir yedek seç.");
+}
 };
 reader.readAsText(file);
 };
 $("reset").onclick=()=>{
 if(confirm("Bütün vardiya ve ayar bilgilerin silinsin mi?")){
 localStorage.removeItem("vardiyaCepteYeni");
-data={};
+data={days:{},holidays:{},workHours:{}};
 loadSettings();
 render();
 alert("Veriler sıfırlandı.");
