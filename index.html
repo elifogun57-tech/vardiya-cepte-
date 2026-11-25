@@ -33,13 +33,13 @@ button.secondary{background:#e7efeb;color:#244b3c}
 .day b{display:block;font-size:14px;margin-bottom:5px}
 .day span{display:block;overflow-wrap:anywhere}
 .day small{display:block;font-size:9px;margin-top:5px;color:#52645b}
-.weekend{background:#ffe1e3!important;border:1px solid #e9a0a6}
-.weekend b,.weekend .shift-name{color:#c51e30}
-.Gündüz{background:#c9efd9!important}
-.Akşam{background:#ffe5c2!important}
-.Gece{background:#dcdcff!important}
-.Boş{background:#e9eceb!important}
-.İzin{background:#ffe0e4!important}
+.day.Gündüz{background:#c9efd9}
+.day.Akşam{background:#ffe5c2}
+.day.Gece{background:#dcdcff}
+.day.Boş{background:#e9eceb}
+.day.İzin{background:#ffe0e4}
+.week-grid .day.weekend{background:#ffe1e3;border:1px solid #e9a0a6}
+.week-grid .day.weekend b,.week-grid .day.weekend .shift-name{color:#c51e30}
 .outside{opacity:.35}
 .week-tools{display:flex;gap:5px;align-items:center;margin-top:5px}
 .week-tools select{flex:1;min-width:0;padding:7px;font-size:11px}
@@ -96,7 +96,7 @@ body{padding:8px}
 </div>
 
 <div id="manualInfo" style="display:none">
-<p class="small">Manuel modda istediğin ayı açabilir, günlere tek tek veya haftanın tamamına vardiya atayabilirsin.</p>
+<p class="small">Manuel modda istediğin ayı açabilir, günlere tek tek veya haftanın tamamına vardiya atayabilirsin. Belirlenmedi seçeneği otomatik vardiya atamaz.</p>
 </div>
 
 <h3 style="margin-top:20px">🕒 Vardiya saatleri</h3>
@@ -189,18 +189,27 @@ function dateKey(d){
 return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 }
 function parseDate(s){
-return new Date(s+'T12:00:00');
+if(!s)return new Date();
+const parts=s.split('-').map(Number);
+if(parts.length===2)return new Date(parts[0],parts[1]-1,1,12);
+return new Date(parts[0],parts[1]-1,parts[2]||1,12);
 }
 function monthKey(d){
 return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
 }
+
 let saved={};
+let loadedKey=KEY;
 try{
-saved=JSON.parse(localStorage.getItem(KEY)||localStorage.getItem(OLDKEY)||'{}');
+const current=localStorage.getItem(KEY);
+const old=localStorage.getItem(OLDKEY);
+saved=JSON.parse(current||old||'{}');
+if(!current&&old)loadedKey=OLDKEY;
 }catch(e){saved={};}
 
 let edits=saved.edits||saved.days||{};
-let shown=new Date();
+let initialStart=saved.start||saved.settings?.start||dateKey(new Date());
+let shown=saved.shownMonth?parseDate(saved.shownMonth):parseDate(initialStart);
 shown.setDate(1);
 
 function setValue(id,value){
@@ -208,7 +217,7 @@ if(value!==undefined&&value!==null)$(id).value=value;
 }
 
 setValue('mode',saved.mode||'auto');
-setValue('start',saved.start||saved.settings?.start||dateKey(new Date()));
+setValue('start',initialStart);
 setValue('cycle',saved.cycle||saved.settings?.cycle||'2-2-2');
 setValue('customCycle',saved.customCycle||'Gündüz, Akşam, Gece, Boş');
 setValue('morningStart',saved.morningStart||'08:00');
@@ -221,9 +230,6 @@ setValue('salary',saved.salary||'');
 setValue('normal',saved.normal||'225');
 setValue('overtimeHours',saved.overtimeHours||'');
 setValue('multiplier',saved.multiplier||'1.5');
-
-shown=parseDate(saved.shownMonth||$('start').value);
-shown.setDate(1);
 
 function sequence(){
 const type=$('cycle').value;
@@ -268,9 +274,7 @@ $('status').textContent='Kayıt yapılamadı. Telefonunda depolama alanını kon
 function getShift(d){
 const key=dateKey(d);
 if(Object.prototype.hasOwnProperty.call(edits,key))return edits[key];
-
-if($('mode').value==='manual')return 'Boş';
-
+if($('mode').value==='manual')return 'Belirlenmedi';
 const start=parseDate($('start').value);
 const delta=Math.round((d-start)/86400000);
 const seq=sequence();
@@ -336,7 +340,7 @@ d.setDate(weekStart.getDate()+i);
 const value=getShift(d);
 const weekend=d.getDay()===0||d.getDay()===6;
 const el=document.createElement('div');
-el.className='day '+value+(weekend?' weekend':'')+(d.getMonth()!==month?' outside':'');
+el.className='day'+(choices.includes(value)?' '+value:'')+(weekend?' weekend':'')+(d.getMonth()!==month?' outside':'');
 const number=document.createElement('b');
 number.textContent=d.getDate();
 const shift=document.createElement('span');
@@ -353,8 +357,12 @@ el.appendChild(small);
 
 el.addEventListener('click',()=>{
 const current=getShift(d);
-const next=(choices.indexOf(current)+1)%choices.length;
-edits[dateKey(d)]=choices[next];
+const index=choices.indexOf(current);
+if(index===-1){
+edits[dateKey(d)]=choices[0];
+}else{
+edits[dateKey(d)]=choices[(index+1)%choices.length];
+}
 save();
 draw();
 });
@@ -366,19 +374,30 @@ week.appendChild(grid);
 const tools=document.createElement('div');
 tools.className='week-tools';
 const select=document.createElement('select');
+
+const unset=document.createElement('option');
+unset.value='__unset';
+unset.textContent='Tüm hafta: Belirlenmedi';
+select.appendChild(unset);
+
 choices.forEach(value=>{
 const option=document.createElement('option');
 option.value=value;
 option.textContent='Tüm hafta: '+value;
 select.appendChild(option);
 });
+
 const apply=document.createElement('button');
 apply.textContent='Haftaya uygula';
 apply.addEventListener('click',()=>{
 for(let i=0;i<7;i++){
 const d=new Date(weekStart);
 d.setDate(weekStart.getDate()+i);
+if(select.value==='__unset'){
+delete edits[dateKey(d)];
+}else{
 edits[dateKey(d)]=select.value;
+}
 }
 save();
 draw();
@@ -412,7 +431,8 @@ $('nextMonth').addEventListener('click',()=>changeMonth(1));
 
 $('monthPicker').addEventListener('change',()=>{
 if(!$('monthPicker').value)return;
-shown=parseDate($('monthPicker').value+'-01');
+shown=parseDate($('monthPicker').value);
+shown.setDate(1);
 draw();
 save();
 });
